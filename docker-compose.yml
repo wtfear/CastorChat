@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  base: &base
+    image: chatwoot/chatwoot:v4.19.1
+    env_file:
+      - .env.example
+    volumes:
+      - storage_data:/app/storage
+    environment:
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=castorchat
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-castorchat_secret_pg_pwd}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD:-castorchat_redis_pwd}@redis:6379
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-castorchat_production_secret_key_base_64_characters_long_gemini_wtfear}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - FORCE_SSL=false
+      - ENABLE_ACCOUNT_SIGNUP=true
+
+  rails:
+    <<: *base
+    container_name: castorchat-web
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "3000:3000"
+    entrypoint: docker/entrypoints/rails.sh
+    command: ['bundle', 'exec', 'rails', 's', '-p', '3000', '-b', '0.0.0.0']
+    restart: unless-stopped
+
+  sidekiq:
+    <<: *base
+    container_name: castorchat-sidekiq
+    depends_on:
+      - postgres
+      - redis
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: castorchat-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=castorchat
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-castorchat_secret_pg_pwd}
+
+  redis:
+    image: redis:alpine
+    container_name: castorchat-redis
+    restart: unless-stopped
+    command: ["sh", "-c", "redis-server --requirepass \"${REDIS_PASSWORD:-castorchat_redis_pwd}\""]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+volumes:
+  storage_data:
+  postgres_data:
+  redis_data:

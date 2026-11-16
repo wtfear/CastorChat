@@ -1,0 +1,110 @@
+services:
+  - type: web
+    name: castor-chat-web
+    env: docker
+    dockerfilePath: docker/Dockerfile
+    plan: standard
+    region: oregon
+    healthCheckPath: /api
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: NODE_ENV
+        value: production
+      - key: INSTALLATION_ENV
+        value: render
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: castor-chat-web
+          property: host
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: POSTGRES_DATABASE
+        fromDatabase:
+          name: castor-chat-db
+          property: database
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: castor-chat-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: castor-chat-db
+          property: port
+      - key: POSTGRES_USERNAME
+        fromDatabase:
+          name: castor-chat-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: castor-chat-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: castor-chat-redis
+          property: connectionString
+      - key: FORCE_SSL
+        value: "true"
+      - key: ENABLE_ACCOUNT_SIGNUP
+        value: "true"
+
+  - type: worker
+    name: castor-chat-sidekiq
+    env: docker
+    dockerfilePath: docker/Dockerfile
+    dockerCommand: bundle exec sidekiq -C config/sidekiq.yml
+    plan: standard
+    region: oregon
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: NODE_ENV
+        value: production
+      - key: INSTALLATION_ENV
+        value: render
+      - key: SECRET_KEY_BASE
+        fromService:
+          type: web
+          name: castor-chat-web
+          envVarKey: SECRET_KEY_BASE
+      - key: POSTGRES_DATABASE
+        fromDatabase:
+          name: castor-chat-db
+          property: database
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: castor-chat-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: castor-chat-db
+          property: port
+      - key: POSTGRES_USERNAME
+        fromDatabase:
+          name: castor-chat-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: castor-chat-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: castor-chat-redis
+          property: connectionString
+
+  - type: redis
+    name: castor-chat-redis
+    plan: standard
+    region: oregon
+    ipAllowList: []
+
+databases:
+  - name: castor-chat-db
+    plan: standard
+    region: oregon
+    databaseName: castorchat_production
+    user: castor_admin
+    postgresMajorVersion: 16
