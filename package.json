@@ -10,6 +10,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "build": "node build.js",
     "eslint": "eslint app/**/*.{js,vue}",
     "eslint:fix": "eslint app/**/*.{js,vue} --fix",
     "test": "TZ=UTC vitest --no-watch --no-cache --no-coverage --logHeapUsage",
@@ -23,7 +24,6 @@
     "analyze:bundles": "pnpm analyze:bundle:sdk && pnpm analyze:bundle:widget",
     "analyze:bundle:sdk": "vite build --config vite.sdk.analyze.config.mts",
     "analyze:bundle:widget": "vite build --config vite.widget.analyze.config.mts",
-    "prepare": "husky install",
     "size": "size-limit",
     "story:dev": "histoire dev",
     "story:build": "histoire build",

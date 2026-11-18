@@ -1,0 +1,11 @@
+Gemfile
+Gemfile.lock
+Rakefile
+app/
+config/
+db/
+lib/
+bin/
+spec/
+vendor/
+enterprise/
